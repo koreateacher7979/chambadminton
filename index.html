@@ -4,22 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>참마음클럽 회원현황</title>
+    <!-- 외부 라이브러리 로드 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; letter-spacing: -0.02em; }
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            letter-spacing: -0.02em; 
+            -webkit-font-smoothing: antialiased;
+        }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        canvas { max-width: 100% !important; height: 100% !important; }
-        .card-hover:hover { transform: translateY(-2px); transition: all 0.2s; }
+        canvas { max-width: 100% !important; }
+        .card-hover:hover { transform: translateY(-2px); transition: all 0.2s ease-in-out; }
+        
+        /* 로딩 애니메이션 */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100; transition: opacity 0.5s;
+        }
     </style>
 </head>
 <body class="bg-[#f1f5f9] text-[#1e293b] pb-10">
 
-    <!-- Top Header -->
+    <!-- 로딩 화면 -->
+    <div id="loadingOverlay">
+        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="font-bold text-slate-500">데이터를 불러오는 중입니다...</p>
+    </div>
+
+    <!-- 상단 헤더 -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -31,7 +50,7 @@
                     <p class="text-[11px] text-slate-500 font-bold mt-0.5">개발자: <span class="text-blue-600 font-black">참마음클럽 김병찬</span></p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center">
                 <button id="refreshBtn" class="p-2.5 hover:bg-slate-100 rounded-full transition-colors group" title="데이터 새로고침">
                     <i data-lucide="refresh-cw" id="refreshIcon" class="w-5 h-5 text-slate-400 group-hover:text-blue-500"></i>
                 </button>
@@ -40,14 +59,14 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <!-- Summary Stats -->
+        <!-- 요약 카드 -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="statsContainer">
-            <!-- Stats JS Injected -->
+            <!-- 자바스크립트에서 렌더링 -->
         </div>
 
-        <!-- Charts Grid -->
+        <!-- 차트 영역 -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Gender Chart -->
+            <!-- 성별 차트 -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 card-hover">
                 <h3 class="text-[11px] font-black text-slate-400 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-3">
                     <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-blue-500"></i> 성별 구성
@@ -57,7 +76,7 @@
                 </div>
             </div>
 
-            <!-- Age Chart -->
+            <!-- 연령대 차트 (C열) -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2 card-hover">
                 <h3 class="text-[11px] font-black text-slate-400 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-3">
                     <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-500"></i> 연령대별 현황
@@ -68,9 +87,9 @@
             </div>
         </div>
 
-        <!-- Rank & Management -->
+        <!-- 급수 및 운영진 영역 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Rank Chart -->
+            <!-- 급수 차트 -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 card-hover">
                 <h3 class="text-[11px] font-black text-slate-400 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-3">
                     <i data-lucide="award" class="w-3.5 h-3.5 text-amber-500"></i> 급수별 현황
@@ -80,24 +99,24 @@
                 </div>
             </div>
 
-            <!-- Managers Grid -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 card-hover h-full">
+            <!-- 운영진 현황 (스크롤 없음) -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 card-hover">
                 <h3 class="text-[11px] font-black text-slate-400 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-3">
                     <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i> 클럽 운영진 현황 <span id="mgrCountText" class="text-blue-600 font-black"></span>
                 </h3>
-                <div id="managerList" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 pr-1">
-                    <!-- Managers JS Injected -->
+                <div id="managerList" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+                    <!-- 자바스크립트에서 렌더링 -->
                 </div>
             </div>
         </div>
 
-        <!-- Table Section -->
+        <!-- 상세 명단 테이블 -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h3 class="font-black text-slate-800 text-sm">전체 회원 명단 <span id="memberTotalText" class="ml-1 text-blue-600 text-xs font-bold"></span></h3>
                 <div class="relative w-48 sm:w-72">
                     <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300"></i>
-                    <input type="text" id="tableSearch" placeholder="이름 또는 급수로 검색하세요" class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-100 shadow-sm transition-all" />
+                    <input type="text" id="tableSearch" placeholder="이름 또는 급수 검색" class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-100 shadow-sm transition-all" />
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -113,7 +132,7 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-50">
-                        <!-- Table Rows JS Injected -->
+                        <!-- 자바스크립트에서 렌더링 -->
                     </tbody>
                 </table>
             </div>
@@ -121,6 +140,7 @@
     </main>
 
     <script>
+        // 구성 정보
         const SPREADSHEET_ID = '1b1uUos7N3BfuWgHmnyv88FikfZ3g-3sKLkdeJTCrdoQ';
         const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv`;
         const MGR_ORDER = { '회장': 1, '부회장': 2, '총무': 3, '재무': 4, '경기이사': 5, '청년부장': 6, '자문위원': 7 };
@@ -128,11 +148,13 @@
         let rawMembers = [];
         let activeCharts = {};
 
-        // Chart.js 숫자 표시 플러그인 정의
+        /**
+         * Chart.js 막대 끝 숫자 표시 플러그인
+         */
         const chartValuePlugin = {
             id: 'chartValuePlugin',
-            afterDatasetsDraw(chart, args, options) {
-                const { ctx, data, chartArea: { top, bottom, left, right, width, height }, scales: { x, y } } = chart;
+            afterDatasetsDraw(chart) {
+                const { ctx, data } = chart;
                 ctx.save();
                 ctx.font = 'bold 11px Pretendard';
                 ctx.textBaseline = 'middle';
@@ -141,14 +163,12 @@
                     chart.getDatasetMeta(i).data.forEach((bar, index) => {
                         const value = dataset.data[index] + '명';
                         if (chart.config.options.indexAxis === 'y') {
-                            // 가로 막대 (급수별)
                             ctx.textAlign = 'left';
-                            ctx.fillStyle = dataset.backgroundColor;
+                            ctx.fillStyle = '#f59e0b';
                             ctx.fillText(value, bar.x + 8, bar.y);
                         } else {
-                            // 세로 막대 (연령대별)
                             ctx.textAlign = 'center';
-                            ctx.fillStyle = dataset.backgroundColor;
+                            ctx.fillStyle = '#6366f1';
                             ctx.fillText(value, bar.x, bar.y - 12);
                         }
                     });
@@ -157,44 +177,9 @@
             }
         };
 
-        const init = () => {
-            lucide.createIcons();
-            fetchData();
-        };
-
-        const fetchData = async () => {
-            const icon = document.getElementById('refreshIcon');
-            icon.classList.add('animate-spin');
-            try {
-                const res = await fetch(`${CSV_URL}&t=${Date.now()}`);
-                const csv = await res.text();
-                processData(csv);
-            } catch (err) {
-                console.error(err);
-                alert("데이터 로드 오류가 발생했습니다.");
-            } finally {
-                icon.classList.remove('animate-spin');
-            }
-        };
-
-        const processData = (csv) => {
-            const lines = csv.replace(/^\uFEFF/, '').split(/\r?\n/);
-            if (lines.length < 2) return;
-
-            const headers = splitCSV(lines[0]);
-            rawMembers = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const values = splitCSV(lines[i]);
-                if (values.length < 2) continue;
-                
-                const member = { _raw: values };
-                headers.forEach((h, idx) => { member[h.trim()] = values[idx]?.trim() || ''; });
-                rawMembers.push(member);
-            }
-            renderAll();
-        };
-
+        /**
+         * CSV 파싱 함수 (쉼표 및 따옴표 처리)
+         */
         const splitCSV = (str) => {
             const res = [];
             let cur = '', q = false;
@@ -207,19 +192,72 @@
             return res;
         };
 
+        /**
+         * 특정 필드 값 추출 (헤더 또는 인덱스 기반)
+         */
         const getField = (m, keys, colIdx = -1) => {
             for (let k of keys) { if (m[k]) return m[k]; }
             if (colIdx !== -1 && m._raw[colIdx]) return m._raw[colIdx];
             return '';
         };
 
+        /**
+         * 데이터 로드 및 초기화
+         */
+        const fetchData = async () => {
+            const icon = document.getElementById('refreshIcon');
+            const overlay = document.getElementById('loadingOverlay');
+            
+            icon.classList.add('animate-spin');
+            overlay.style.display = 'flex';
+            overlay.style.opacity = '1';
+
+            try {
+                const res = await fetch(`${CSV_URL}&t=${Date.now()}`);
+                const csv = await res.text();
+                
+                const lines = csv.replace(/^\uFEFF/, '').split(/\r?\n/);
+                if (lines.length < 2) throw new Error("Data empty");
+
+                const headers = splitCSV(lines[0]).map(h => h.trim());
+                rawMembers = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const values = splitCSV(lines[i]);
+                    if (values.length < 2) continue;
+                    
+                    const member = { _raw: values };
+                    headers.forEach((h, idx) => { member[h] = values[idx]?.trim() || ''; });
+                    rawMembers.push(member);
+                }
+                
+                renderAll();
+                setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => overlay.style.display = 'none', 500);
+                }, 300);
+
+            } catch (err) {
+                console.error(err);
+                alert("데이터 로드 중 오류가 발생했습니다. 구글 시트의 공유 설정을 확인해주세요.");
+            } finally {
+                icon.classList.remove('animate-spin');
+            }
+        };
+
+        /**
+         * 전체 렌더링 실행
+         */
         const renderAll = () => {
             const stats = { 남: 0, 여: 0, ageMap: {}, rankMap: {}, managers: [] };
 
             rawMembers.forEach(m => {
+                // 성별 데이터 (B열 또는 '성별' 헤더)
                 const g = getField(m, ['성별', '성'], 1);
-                if (g.includes('남')) stats.남++; else if (g.includes('여')) stats.여++;
+                if (g.includes('남')) stats.남++; 
+                else if (g.includes('여')) stats.여++;
 
+                // 연령 데이터 (C열 또는 '나이' 헤더)
                 const aRaw = getField(m, ['나이', '연령', 'Age'], 2);
                 const aNum = aRaw.toString().match(/\d+/);
                 if (aNum) {
@@ -227,15 +265,18 @@
                     stats.ageMap[group] = (stats.ageMap[group] || 0) + 1;
                 }
 
+                // 급수 데이터
                 const r = getField(m, ['급수', '부수']);
                 if (r && r !== '-') stats.rankMap[r] = (stats.rankMap[r] || 0) + 1;
 
+                // 직책/운영진 데이터
                 const p = getField(m, ['직책', '구분']);
                 if (p && p !== '-' && p !== '회원' && p !== '일반') {
                     stats.managers.push({ name: getField(m, ['이름', '성함'], 0), pos: p });
                 }
             });
 
+            // 1. 요약 카드 주입
             document.getElementById('statsContainer').innerHTML = `
                 ${statCard('전체 회원', rawMembers.length, '명', 'blue', 'users')}
                 ${statCard('클럽 운영진', stats.managers.length, '명', 'indigo', 'shield-check')}
@@ -243,6 +284,7 @@
                 ${statCard('여성 회원', stats.여, '명', 'rose', 'circle-user')}
             `;
 
+            // 2. 운영진 명단 주입 (정렬 적용)
             stats.managers.sort((a, b) => (MGR_ORDER[a.pos] || 99) - (MGR_ORDER[b.pos] || 99));
             document.getElementById('mgrCountText').innerText = `(${stats.managers.length}명)`;
             document.getElementById('managerList').innerHTML = stats.managers.map(m => `
@@ -254,6 +296,7 @@
                 </div>
             `).join('');
 
+            // 3. 차트 및 테이블 업데이트
             renderCharts(stats);
             renderTable();
             lucide.createIcons();
@@ -272,6 +315,7 @@
         `;
 
         const renderCharts = (s) => {
+            // 성별 도넛 차트
             const ctxG = document.getElementById('genderChart').getContext('2d');
             if (activeCharts.g) activeCharts.g.destroy();
             activeCharts.g = new Chart(ctxG, {
@@ -287,6 +331,7 @@
                 }
             });
 
+            // 연령대 바 차트
             const ageKeys = Object.keys(s.ageMap).sort();
             const ctxA = document.getElementById('ageChart').getContext('2d');
             if (activeCharts.a) activeCharts.a.destroy();
@@ -305,6 +350,7 @@
                 }
             });
 
+            // 급수 바 차트
             const rankKeys = Object.keys(s.rankMap).sort();
             const ctxR = document.getElementById('rankChart').getContext('2d');
             if (activeCharts.r) activeCharts.r.destroy();
@@ -352,10 +398,12 @@
             `).join('');
         };
 
-        document.getElementById('refreshBtn').onclick = fetchData;
-        document.getElementById('tableSearch').oninput = renderTable;
-
-        window.onload = init;
+        // 초기 실행
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('refreshBtn').onclick = fetchData;
+            document.getElementById('tableSearch').oninput = renderTable;
+            fetchData();
+        });
     </script>
 </body>
 </html>
