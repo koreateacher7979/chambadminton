@@ -12,103 +12,102 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        body { font-family: 'Pretendard', sans-serif; letter-spacing: -0.025em; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
-        canvas { max-width: 100%; }
+        canvas { max-width: 100% !important; }
+        .stat-card:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body class="bg-[#f8fafc] text-[#1e293b] pb-10">
 
     <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-100">
                     <i data-lucide="users" class="w-4 h-4 text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-black tracking-tight text-slate-800 leading-tight">참마음클럽 회원현황</h1>
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                    <h1 class="text-base font-black tracking-tight text-slate-800 leading-none mb-1">참마음클럽 회원현황</h1>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">
                         Dev: <span class="text-blue-600 font-black">참마음클럽 김병찬</span>
                     </p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <button id="refreshBtn" class="p-2 hover:bg-slate-100 rounded-full transition-all">
-                    <i data-lucide="refresh-cw" id="refreshIcon" class="w-4 h-4 text-slate-400"></i>
+            <div class="flex items-center gap-3">
+                <button id="refreshBtn" class="p-2 hover:bg-slate-100 rounded-full transition-all group">
+                    <i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-500"></i>
                 </button>
                 <a id="sheetLink" target="_blank" rel="noreferrer"
-                   class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-sm">
-                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> 시트 열기
+                   class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-sm active:scale-95">
+                    <i data-lucide="external-link" class="w-3 h-3"></i> 시트 열기
                 </a>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <!-- Summary Stats -->
+    <main class="max-w-7xl mx-auto px-4 py-5 space-y-5">
+        <!-- Summary Stats Grid -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="statsGrid">
-            <!-- Stats will be injected here -->
+            <!-- Stats Cards will be injected here -->
         </div>
 
-        <!-- Charts Area -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 w-full uppercase tracking-widest">
-                    <i data-lucide="filter" class="w-3.5 h-3.5"></i> 성별 구성
+                <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 w-full uppercase tracking-widest border-b border-slate-50 pb-2">
+                    <i data-lucide="filter" class="w-3 h-3"></i> 성별 구성
                 </h3>
-                <div class="w-full h-[220px] flex items-center justify-center">
+                <div class="w-full h-[180px] relative">
                     <canvas id="genderChart"></canvas>
                 </div>
             </div>
 
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
-                <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest">
-                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i> 연령대별 현황 (C열 데이터)
+                <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-2">
+                    <i data-lucide="calendar" class="w-3 h-3"></i> 연령대별 현황 (C열 데이터)
                 </h3>
-                <div class="w-full h-[220px]">
+                <div class="w-full h-[180px]">
                     <canvas id="ageChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Rank Stats -->
+        <!-- Rank & Managers Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest">
-                    <i data-lucide="award" class="w-3.5 h-3.5"></i> 급수별 인원현황
+                <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-2">
+                    <i data-lucide="award" class="w-3 h-3"></i> 급수별 인원현황
                 </h3>
-                <div class="w-full h-[300px]">
+                <div class="w-full h-[250px]">
                     <canvas id="rankChart"></canvas>
                 </div>
             </div>
 
-            <!-- Managers Grid -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="text-[10px] font-black text-slate-400 mb-6 flex items-center gap-2 uppercase tracking-widest">
-                    <i data-lucide="user-check" class="w-4 h-4"></i> 클럽 운영진 현황 <span id="managerCount" class="ml-1"></span>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="text-[10px] font-black text-slate-400 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-2">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-500"></i> 클럽 운영진 현황 <span id="managerCount" class="text-blue-600 font-black"></span>
                 </h3>
-                <div id="managerGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
-                    <!-- Managers will be injected here -->
+                <div id="managerGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto max-h-[250px] pr-1 custom-scrollbar">
+                    <!-- Managers cards will be injected here -->
                 </div>
             </div>
         </div>
 
-        <!-- Detailed Table -->
+        <!-- Detailed List Table -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/30">
                 <div class="flex items-center gap-2">
                     <h3 class="font-black text-slate-800 text-sm tracking-tight">전체 회원 명단</h3>
-                    <span id="activeCount" class="bg-white px-2 py-0.5 rounded-full text-[9px] font-black text-slate-400 border border-slate-200 shadow-sm">
+                    <span id="activeCount" class="bg-white px-2 py-0.5 rounded-full text-[9px] font-black text-blue-600 border border-blue-100 shadow-sm">
                     </span>
                 </div>
                 <div class="relative w-full sm:w-64">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300"></i>
-                    <input type="text" id="searchInput" placeholder="이름, 급수 검색..."
+                    <input type="text" id="searchInput" placeholder="이름, 급수, 직책 검색..."
                            class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-100 transition-all shadow-sm" />
                 </div>
             </div>
@@ -116,16 +115,16 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100 bg-slate-50/50">
-                            <th class="px-5 py-3">성함</th>
-                            <th class="px-5 py-3">성별</th>
-                            <th class="px-5 py-3 text-center">연령</th>
-                            <th className="px-5 py-3">급수</th>
-                            <th className="px-5 py-3">직책</th>
-                            <th className="px-5 py-3">비고</th>
+                            <th class="px-5 py-2.5">성함</th>
+                            <th class="px-4 py-2.5">성별</th>
+                            <th class="px-4 py-2.5 text-center">연령</th>
+                            <th class="px-4 py-2.5">급수</th>
+                            <th class="px-4 py-2.5">직책</th>
+                            <th class="px-5 py-2.5">비고</th>
                         </tr>
                     </thead>
                     <tbody id="memberTableBody" class="divide-y divide-slate-50">
-                        <!-- Rows will be injected here -->
+                        <!-- Table rows will be injected here -->
                     </tbody>
                 </table>
             </div>
@@ -135,16 +134,27 @@
     <script>
         const SPREADSHEET_ID = '1b1uUos7N3BfuWgHmnyv88FikfZ3g-3sKLkdeJTCrdoQ';
         const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv`;
+        
+        // 정렬 순서 정의
         const POSITION_ORDER = { '회장': 1, '부회장': 2, '총무': 3, '재무': 4, '경기이사': 5, '청년부장': 6, '자문위원': 7 };
+        
+        // 헤더 매핑 (다양한 이름 대응)
+        const HEADER_MAP = {
+            name: ['이름', '성함', 'Name'],
+            gender: ['성별', '성', 'Gender'],
+            age: ['나이', '연령', 'Age', '연세'],
+            rank: ['급수', '부수', 'Level'],
+            position: ['직책', 'Position', '구분'],
+            note: ['비고', 'Note']
+        };
 
         let rawData = [];
-        let filteredData = [];
         let charts = {};
 
-        // Lucide Icons initialization
+        // Lucide 아이콘 초기화 함수
         const initIcons = () => lucide.createIcons();
 
-        // CSV Parser (Simple)
+        // CSV 데이터 파싱
         const parseCSV = (text) => {
             const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
             if (lines.length === 0) return [];
@@ -176,30 +186,40 @@
             return result;
         };
 
-        const getVal = (item, keys, index = -1) => {
-            for (let key of keys) { if (item[key] !== undefined && item[key] !== '') return item[key]; }
+        // 데이터 추출 헬퍼
+        const getVal = (item, type, index = -1) => {
+            const keys = HEADER_MAP[type] || [];
+            for (let key of keys) {
+                if (item[key] !== undefined && item[key] !== '') return item[key];
+            }
+            // 헤더 매칭 실패 시 지정된 인덱스 활용 (연령은 C열=2)
             if (index !== -1 && item._raw && item._raw[index]) return item._raw[index];
             return '';
         };
 
-        // UI Helpers
+        // 통계 요약 카드 렌더링
         const renderStatCard = (title, value, unit, colorClass, iconHtml) => {
-            const bgClass = { blue: 'bg-blue-50 text-blue-600', indigo: 'bg-indigo-50 text-indigo-600', rose: 'bg-rose-50 text-rose-600' }[colorClass] || 'bg-slate-50';
+            const colorStyles = {
+                blue: 'bg-blue-50 text-blue-600',
+                indigo: 'bg-indigo-50 text-indigo-600',
+                rose: 'bg-rose-50 text-rose-600'
+            }[colorClass] || 'bg-slate-50';
+            
             return `
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 transition-all stat-card">
                     <div class="flex justify-between items-start mb-2">
-                        <div class="p-1.5 rounded-xl ${bgClass}">${iconHtml}</div>
+                        <div class="p-1.5 rounded-xl ${colorStyles}">${iconHtml}</div>
                         <p class="text-[9px] font-black text-slate-300 uppercase tracking-widest">${title}</p>
                     </div>
                     <div class="flex items-baseline gap-1">
-                        <h4 class="text-xl font-black text-slate-800 tracking-tight">${value}</h4>
+                        <h4 class="text-xl font-black text-slate-800 tracking-tight">${value || 0}</h4>
                         <span class="text-[10px] font-bold text-slate-400">${unit}</span>
                     </div>
                 </div>
             `;
         };
 
-        // Core logic
+        // 화면 UI 업데이트 및 데이터 가공
         const updateUI = () => {
             const genderMap = {};
             const ageMap = {};
@@ -207,54 +227,61 @@
             const managers = [];
 
             rawData.forEach(item => {
-                const gender = getVal(item, ['성별', '성'], 1).trim();
+                // 성별
+                const gender = getVal(item, 'gender', 1).trim();
                 if (gender) genderMap[gender] = (genderMap[gender] || 0) + 1;
 
-                const ageRaw = getVal(item, ['나이', '연령'], 2);
+                // 연령 (C열 데이터 우선)
+                const ageRaw = getVal(item, 'age', 2);
                 const ageMatch = ageRaw.toString().match(/\d+/);
                 if (ageMatch) {
                     const group = Math.floor(parseInt(ageMatch[0]) / 10) * 10 + '대';
                     ageMap[group] = (ageMap[group] || 0) + 1;
                 }
 
-                const rank = getVal(item, ['급수', '부수']).trim();
+                // 급수
+                const rank = getVal(item, 'rank').trim();
                 if (rank && rank !== '-') rankMap[rank] = (rankMap[rank] || 0) + 1;
 
-                const position = getVal(item, ['직책']).trim();
+                // 운영진
+                const position = getVal(item, 'position').trim();
                 if (position && position !== '-' && position !== '회원' && position !== '일반') {
-                    managers.push({ name: getVal(item, ['이름', '성함'], 0), position });
+                    managers.push({ name: getVal(item, 'name', 0), position });
                 }
             });
 
-            // Managers Sort
+            // 운영진 정렬
             managers.sort((a, b) => (POSITION_ORDER[a.position] || 99) - (POSITION_ORDER[b.position] || 99));
 
-            // Stats Injection
+            // 상단 요약 카드 주입
             document.getElementById('statsGrid').innerHTML = 
                 renderStatCard('전체 회원', rawData.length, '명', 'blue', '<i data-lucide="users" style="width:16px; height:16px;"></i>') +
                 renderStatCard('운영진', managers.length, '명', 'indigo', '<i data-lucide="shield-check" style="width:16px; height:16px;"></i>') +
                 renderStatCard('남성 회원', genderMap['남'] || 0, '명', 'blue', '<div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>') +
                 renderStatCard('여성 회원', genderMap['여'] || 0, '명', 'rose', '<div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>');
 
-            // Managers List Injection
+            // 운영진 명단 주입
             document.getElementById('managerCount').innerText = `(${managers.length}명)`;
             document.getElementById('managerGrid').innerHTML = managers.map(m => `
-                <div class="flex flex-col items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-200 transition-all shadow-sm hover:shadow-md group">
-                    <div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mb-3 text-blue-600 font-black border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all text-[11px] leading-tight text-center px-1 shadow-inner">
+                <div class="flex flex-col items-center p-3.5 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-200 transition-all shadow-sm group">
+                    <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center mb-2.5 text-blue-600 font-black border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all text-[10px] leading-tight text-center px-1 shadow-inner">
                         ${m.position}
                     </div>
-                    <p class="font-bold text-slate-800 text-sm">${m.name}</p>
+                    <p class="font-bold text-slate-800 text-xs">${m.name}</p>
                 </div>
             `).join('');
 
-            // Chart Updates
+            // 차트 및 테이블 업데이트
             updateCharts(genderMap, ageMap, rankMap);
             renderTable();
             initIcons();
         };
 
         const updateCharts = (genderMap, ageMap, rankMap) => {
-            // Gender Chart
+            // Chart.js 옵션 공통 설정
+            const chartOptions = { responsive: true, maintainAspectRatio: false };
+
+            // 1. 성별 차트
             if (charts.gender) charts.gender.destroy();
             charts.gender = new Chart(document.getElementById('genderChart'), {
                 type: 'doughnut',
@@ -267,35 +294,35 @@
                     }]
                 },
                 options: { 
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: 'bold' } } } }
+                    ...chartOptions,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10, weight: 'bold' } } } }
                 }
             });
 
-            // Age Chart
+            // 2. 연령 차트
             const ageSortedKeys = Object.keys(ageMap).sort((a,b) => parseInt(a) - parseInt(b));
             if (charts.age) charts.age.destroy();
             charts.age = new Chart(document.getElementById('ageChart'), {
                 type: 'bar',
                 data: {
-                    labels: ageSortedKeys,
+                    labels: ageSortedKeys.map(k => `${k} (${ageMap[k]}명)`),
                     datasets: [{
                         label: '인원수(명)',
                         data: ageSortedKeys.map(k => ageMap[k]),
-                        backgroundColor: '#6366f1', borderRadius: 6
+                        backgroundColor: '#6366f1', borderRadius: 4
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    ...chartOptions,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 9 } } },
                         x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }
                     }
                 }
             });
 
-            // Rank Chart
+            // 3. 급수 차트
             const rankSortedKeys = Object.keys(rankMap).sort();
             if (charts.rank) charts.rank.destroy();
             charts.rank = new Chart(document.getElementById('rankChart'), {
@@ -309,12 +336,12 @@
                     }]
                 },
                 options: {
+                    ...chartOptions,
                     indexAxis: 'y',
-                    responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } },
-                        y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' } } }
+                        x: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 9 } } },
+                        y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }
                     }
                 }
             });
@@ -323,29 +350,29 @@
         const renderTable = () => {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const filtered = rawData.filter(m => {
-                const name = getVal(m, ['이름', '성함'], 0).toLowerCase();
-                const rank = getVal(m, ['급수']).toLowerCase();
-                const pos = getVal(m, ['직책']).toLowerCase();
+                const name = getVal(m, 'name', 0).toLowerCase();
+                const rank = getVal(m, 'rank').toLowerCase();
+                const pos = getVal(m, 'position').toLowerCase();
                 return name.includes(searchTerm) || rank.includes(searchTerm) || pos.includes(searchTerm);
             });
 
-            document.getElementById('activeCount').innerText = `${filtered.length} ACTIVE`;
+            document.getElementById('activeCount').innerText = `${filtered.length} 명`;
             document.getElementById('memberTableBody').innerHTML = filtered.map(m => `
                 <tr class="hover:bg-slate-50/50 transition-colors">
-                    <td class="px-5 py-2.5 font-bold text-slate-700 text-xs">${getVal(m, ['이름', '성함'], 0)}</td>
-                    <td class="px-5 py-2.5">
-                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md ${getVal(m, ['성별'], 1) === '남' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}">
-                            ${getVal(m, ['성별'], 1)}
+                    <td class="px-5 py-2 font-bold text-slate-700 text-[11px]">${getVal(m, 'name', 0)}</td>
+                    <td class="px-4 py-2">
+                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md ${getVal(m, 'gender', 1) === '남' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}">
+                            ${getVal(m, 'gender', 1)}
                         </span>
                     </td>
-                    <td class="px-5 py-2.5 text-xs text-slate-500 text-center font-medium">${getVal(m, ['나이', '연령'], 2)}</td>
-                    <td class="px-5 py-2.5">
-                        <span class="bg-amber-50 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded-md border border-amber-100">
-                            ${getVal(m, ['급수']) || '-'}
+                    <td class="px-4 py-2 text-[11px] text-slate-500 text-center font-medium">${getVal(m, 'age', 2)}</td>
+                    <td class="px-4 py-2">
+                        <span class="bg-amber-50 text-amber-700 text-[9px] font-black px-1.5 py-0.5 rounded-md border border-amber-100">
+                            ${getVal(m, 'rank') || '-'}
                         </span>
                     </td>
-                    <td class="px-5 py-2.5 text-blue-600 font-bold text-[11px]">${getVal(m, ['직책']) === '-' ? '' : getVal(m, ['직책'])}</td>
-                    <td class="px-5 py-2.5 text-[10px] text-slate-400 italic truncate max-w-[120px]">${getVal(m, ['비고'])}</td>
+                    <td class="px-4 py-2 text-blue-600 font-bold text-[10px]">${getVal(m, 'position') === '-' ? '' : getVal(m, 'position')}</td>
+                    <td class="px-5 py-2 text-[10px] text-slate-400 italic truncate max-w-[120px]">${getVal(m, 'note')}</td>
                 </tr>
             `).join('');
         };
@@ -360,7 +387,7 @@
                 updateUI();
             } catch (err) {
                 console.error(err);
-                alert('데이터를 불러오는데 실패했습니다.');
+                alert('데이터 동기화 중 오류가 발생했습니다.');
             } finally {
                 refreshIcon.classList.remove('animate-spin');
             }
