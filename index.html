@@ -1,403 +1,361 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>참마음클럽 회원 현황 대시보드</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide-react/0.263.1/lucide-react.min.js"></script>
-    <!-- Chart.js for data visualization -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
-        .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        .grade-tag { padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem; }
-        .grade-A { background-color: #fef3c7; color: #92400e; }
-        .grade-B { background-color: #dcfce7; color: #166534; }
-        .grade-C { background-color: #dbeafe; color: #1e40af; }
-        .grade-D { background-color: #f1f5f9; color: #475569; }
-        
-        /* Loading Animation */
-        .loading-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
-        }
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body class="p-4 md:p-8">
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+  PieChart, Pie, Cell, LabelList
+} from 'recharts';
+import { 
+  Users, UserCheck, ShieldCheck, Award, Filter, Search, RefreshCw, 
+  ExternalLink, Calendar, AlertCircle
+} from 'lucide-react';
 
-    <div id="app" class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-800">참마음클럽 대시보드</h1>
-                <p class="text-slate-500" id="last-updated">데이터를 불러오는 중...</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <button id="refresh-btn" onclick="fetchData(true)" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all active:scale-95 disabled:opacity-50">
-                    <i id="refresh-icon" data-lucide="refresh-cw" class="w-4 h-4"></i>
-                    <span id="refresh-text">새로고침</span>
-                </button>
-            </div>
-        </header>
+const SPREADSHEET_ID = '1b1uUos7N3BfuWgHmnyv88FikfZ3g-3sKLkdeJTCrdoQ';
+const BASE_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv`;
 
-        <!-- Main Stats -->
-        <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="card p-6 flex items-center gap-4 border-l-4 border-blue-500">
-                <div class="bg-blue-100 p-3 rounded-full text-blue-600">
-                    <i data-lucide="users" class="w-8 h-8"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-slate-500 uppercase font-bold tracking-wider">총 회원수</p>
-                    <h2 id="total-members" class="text-3xl font-bold text-slate-800">0</h2>
-                </div>
-            </div>
-            <div class="card p-6 flex items-center gap-4 border-l-4 border-emerald-500">
-                <div class="bg-emerald-100 p-3 rounded-full text-emerald-600">
-                    <i data-lucide="award" class="w-8 h-8"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-slate-500 uppercase font-bold tracking-wider">최고 급수 (A)</p>
-                    <h2 id="grade-a-count" class="text-3xl font-bold text-slate-800">0</h2>
-                </div>
-            </div>
-            <div class="card p-6 flex items-center gap-4 border-l-4 border-orange-500">
-                <div class="bg-orange-100 p-3 rounded-full text-orange-600">
-                    <i data-lucide="calendar" class="w-8 h-8"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-slate-500 uppercase font-bold tracking-wider">주요 연령대</p>
-                    <h2 id="top-age-group" class="text-3xl font-bold text-slate-800">-</h2>
-                </div>
-            </div>
-        </div>
+// 운영진 표시 정렬 순서 정의
+const POSITION_ORDER = {
+  '회장': 1,
+  '부회장': 2,
+  '총무': 3,
+  '재무': 4,
+  '경기이사': 5,
+  '청년부장': 6,
+  '자문위원': 7
+};
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card p-6">
-                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                    <i data-lucide="bar-chart-2" class="w-5 h-5 text-blue-500"></i>
-                    급수별 현황
-                </h3>
-                <div class="h-64">
-                    <canvas id="gradeChart"></canvas>
-                </div>
-            </div>
-            <div class="card p-6">
-                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                    <i data-lucide="pie-chart" class="w-5 h-5 text-emerald-500"></i>
-                    연령대별 현황
-                </h3>
-                <div class="h-64">
-                    <canvas id="ageChart"></canvas>
-                </div>
-            </div>
-        </div>
+const App = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-        <!-- Positions Section -->
-        <div class="card p-6 mb-8">
-            <h3 class="text-lg font-bold mb-4 flex items-center gap-2 border-b pb-2">
-                <i data-lucide="shield-check" class="w-5 h-5 text-purple-500"></i>
-                직책별 명단
-            </h3>
-            <div id="position-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Dynamic Content -->
-            </div>
-        </div>
+  const parseCSV = (text) => {
+    const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+    if (lines.length === 0) return [];
 
-        <!-- Member Table -->
-        <div class="card overflow-hidden">
-            <div class="p-6 border-b flex flex-col md:flex-row justify-between items-center gap-4">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i data-lucide="list" class="w-5 h-5 text-slate-500"></i>
-                    회원 총명단
-                </h3>
-                <div class="relative w-full md:w-64">
-                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                    <input type="text" id="member-search" placeholder="이름 또는 직책 검색..." class="pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 border-b">
-                        <tr>
-                            <th class="px-6 py-4 font-semibold text-slate-600">이름</th>
-                            <th class="px-6 py-4 font-semibold text-slate-600">연령대</th>
-                            <th class="px-6 py-4 font-semibold text-slate-600">급수</th>
-                            <th class="px-6 py-4 font-semibold text-slate-600">직책</th>
-                            <th class="px-6 py-4 font-semibold text-slate-600">가입일</th>
-                        </tr>
-                    </thead>
-                    <tbody id="member-table-body" class="divide-y">
-                        <!-- Dynamic Content -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    const result = [];
+    const headers = splitCSVLine(lines[0]).map(h => h.trim());
 
-    <script>
-        // Lucide Icons initialization
-        lucide.createIcons();
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const values = splitCSVLine(lines[i]);
+      const obj = {
+        _raw: values.map(v => v.trim()) // 인덱스 접근을 위해 원본 배열 보관
+      };
+      headers.forEach((header, index) => {
+        obj[header] = values[index]?.trim() || '';
+      });
+      result.push(obj);
+    }
+    return result;
+  };
 
-        // 새로 제공해주신 '웹에 게시'용 CSV 데이터 링크
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKSZvveN8lyXpiXBcaomFgVvZFEqrtmT1lwfSCv7S7PxV2_Nbw76vXoPryovzOPlBAKmDlU1y88O1n/pub?output=csv';
-        const CACHE_KEY = 'cham_maum_cache';
+  const splitCSVLine = (line) => {
+    const result = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') inQuotes = !inQuotes;
+      else if (char === ',' && !inQuotes) {
+        result.push(cur);
+        cur = '';
+      } else cur += char;
+    }
+    result.push(cur);
+    return result;
+  };
 
-        let gradeChartInstance = null;
-        let ageChartInstance = null;
-        let allMembers = [];
+  // 값 추출 헬퍼 (헤더 이름 검색 -> 실패시 인덱스 기반 접근)
+  const getVal = (item, keys, index = -1) => {
+    // 1. 지정된 키(헤더명)로 검색
+    for (let key of keys) {
+      if (item[key] !== undefined && item[key] !== '') return item[key];
+    }
+    // 2. 헤더명이 다를 경우 인덱스로 직접 접근 (C열 = index 2)
+    if (index !== -1 && item._raw && item._raw[index]) {
+      return item._raw[index];
+    }
+    return '';
+  };
 
-        // Loading state control
-        function toggleLoading(isLoading) {
-            const btn = document.getElementById('refresh-btn');
-            const icon = document.getElementById('refresh-icon');
-            const text = document.getElementById('refresh-text');
-            const stats = document.getElementById('stats-container');
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${BASE_CSV_URL}&t=${Date.now()}`);
+      if (!response.ok) throw new Error('데이터 로드 실패');
+      const csvText = await response.text();
+      const parsedData = parseCSV(csvText);
+      setData(parsedData);
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (err) {
+      setError("데이터 동기화 실패. 스프레드시트 공유 설정을 확인하세요.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            if (isLoading) {
-                btn.disabled = true;
-                if(icon) icon.classList.add('spin');
-                if(text) text.innerText = '동기화 중...';
-                if(stats) stats.classList.add('loading-pulse');
-            } else {
-                btn.disabled = false;
-                if(icon) icon.classList.remove('spin');
-                if(text) text.innerText = '새로고침';
-                if(stats) stats.classList.remove('loading-pulse');
-            }
-        }
+  useEffect(() => { fetchData(); }, []);
 
-        // CSV parsing that handles quotes and commas correctly
-        function parseCSV(text) {
-            const lines = text.split(/\r?\n/);
-            return lines.map(line => {
-                const result = [];
-                let cur = '', inQuote = false;
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"') inQuote = !inQuote;
-                    else if (char === ',' && !inQuote) {
-                        result.push(cur);
-                        cur = '';
-                    } else cur += char;
-                }
-                result.push(cur);
-                // Remove surrounding quotes and trim
-                return result.map(v => v.replace(/^"|"$/g, '').trim());
-            });
-        }
+  const stats = useMemo(() => {
+    if (!data.length) return null;
 
-        async function fetchData(isManual = false) {
-            // 1. Try to load from Cache first
-            const cachedData = localStorage.getItem(CACHE_KEY);
-            if (cachedData && !isManual) {
-                try {
-                    const parsedCache = JSON.parse(cachedData);
-                    allMembers = parsedCache.data;
-                    updateDashboard();
-                    document.getElementById('last-updated').innerText = `최근 데이터 (확인: ${parsedCache.time})`;
-                } catch (e) { console.error("Cache parse error", e); }
-            }
+    const genderMap = {};
+    const ageMap = {};
+    const rankMap = {};
+    const managers = [];
 
-            toggleLoading(true);
+    data.forEach(item => {
+      // 1. 성별 (보통 B열 또는 '성별' 헤더)
+      const gender = getVal(item, ['성별', 'Gender', '성'], 1).trim();
+      if (gender) genderMap[gender] = (genderMap[gender] || 0) + 1;
 
-            try {
-                // 2. Fetch fresh data with cache busting
-                const response = await fetch(CSV_URL + '&cb=' + Date.now());
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const csvText = await response.text();
-                const rows = parseCSV(csvText);
-                
-                // Header: [이름, 소개, 직책, 가입일]
-                const data = rows.slice(1).filter(row => row[0] && row[0] !== "");
-                
-                const newMembers = data.map(row => {
-                    const info = row[1] ? row[1] : "";
-                    const age = info.replace(/[A-Z]/gi, '');
-                    const grade = info.slice(-1).toUpperCase();
-                    return {
-                        name: row[0],
-                        code: info,
-                        ageGroup: age ? Math.floor(parseInt(age) / 10) * 10 + '대' : '미상',
-                        grade: (['A','B','C','D'].includes(grade) ? grade : 'D') + '급',
-                        position: row[2] || '',
-                        joinDate: row[3] || ''
-                    };
-                });
+      // 2. 연령 (C열 데이터 반영 - 인덱스 2)
+      const ageRaw = getVal(item, ['나이', '연령', 'Age', '연세'], 2);
+      const ageMatch = ageRaw.toString().match(/\d+/);
+      if (ageMatch) {
+        const age = parseInt(ageMatch[0]);
+        const group = Math.floor(age / 10) * 10 + '대';
+        ageMap[group] = (ageMap[group] || 0) + 1;
+      }
 
-                if (newMembers.length > 0) {
-                    allMembers = newMembers;
-                    const timestamp = new Date().toLocaleString();
-                    localStorage.setItem(CACHE_KEY, JSON.stringify({
-                        data: allMembers,
-                        time: timestamp
-                    }));
-                    
-                    updateDashboard();
-                    document.getElementById('last-updated').innerText = `최종 업데이트: ${timestamp}`;
-                }
+      // 3. 급수
+      const rank = getVal(item, ['급수', '부수', 'Level']).trim();
+      if (rank && rank !== '-') rankMap[rank] = (rankMap[rank] || 0) + 1;
 
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                document.getElementById('last-updated').innerText = "데이터 로딩 실패";
-                if (!allMembers.length) {
-                    const tbody = document.getElementById('member-table-body');
-                    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400 font-medium">
-                        데이터를 불러올 수 없습니다.<br>
-                        네트워크 연결 또는 스프레드시트 게시 상태를 확인해주세요.
-                    </td></tr>`;
-                }
-            } finally {
-                toggleLoading(false);
-                lucide.createIcons();
-            }
-        }
-
-        function updateDashboard() {
-            // Summary Stats
-            document.getElementById('total-members').innerText = allMembers.length;
-            const aGradeCount = allMembers.filter(m => m.grade === 'A급').length;
-            document.getElementById('grade-a-count').innerText = aGradeCount;
-
-            // Grade Stats
-            const grades = ['A급', 'B급', 'C급', 'D급'];
-            const gradeCounts = grades.map(g => allMembers.filter(m => m.grade === g).length);
-            updateGradeChart(grades, gradeCounts);
-
-            // Age Stats
-            const ageGroups = ['20대', '30대', '40대', '50대', '60대', '70대'];
-            const ageCounts = ageGroups.map(a => allMembers.filter(m => m.ageGroup === a).length);
-            updateAgeChart(ageGroups, ageCounts);
-
-            const maxAgeIdx = ageCounts.indexOf(Math.max(...ageCounts));
-            document.getElementById('top-age-group').innerText = ageCounts[maxAgeIdx] > 0 ? ageGroups[maxAgeIdx] : '-';
-
-            // Position List
-            updatePositionList();
-
-            // Member Table
-            renderTable(allMembers);
-        }
-
-        function updateGradeChart(labels, data) {
-            const ctx = document.getElementById('gradeChart').getContext('2d');
-            if (gradeChartInstance) gradeChartInstance.destroy();
-            gradeChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '인원수',
-                        data: data,
-                        backgroundColor: ['#fbbf24', '#34d399', '#60a5fa', '#94a3b8'],
-                        borderRadius: 8
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    animation: { duration: 500 },
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
-            });
-        }
-
-        function updateAgeChart(labels, data) {
-            const ctx = document.getElementById('ageChart').getContext('2d');
-            if (ageChartInstance) ageChartInstance.destroy();
-            ageChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#4ade80', '#60a5fa', '#a78bfa']
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    animation: { duration: 500 },
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
-        }
-
-        function updatePositionList() {
-            const container = document.getElementById('position-list');
-            container.innerHTML = '';
-            
-            const positions = {};
-            allMembers.forEach(m => {
-                if (m.position && m.position !== '-' && m.position !== '회원') {
-                    if (!positions[m.position]) positions[m.position] = [];
-                    positions[m.position].push(m.name);
-                }
-            });
-
-            if (Object.keys(positions).length === 0) {
-                container.innerHTML = '<p class="col-span-full text-slate-400 text-center py-4">등록된 직책자가 없습니다.</p>';
-                return;
-            }
-
-            for (const [pos, names] of Object.entries(positions)) {
-                const div = document.createElement('div');
-                div.className = 'bg-slate-50 p-4 rounded-xl border border-slate-100';
-                div.innerHTML = `
-                    <p class="text-xs font-bold text-slate-400 uppercase mb-1">${pos}</p>
-                    <p class="text-slate-800 font-bold">${names.join(', ')}</p>
-                `;
-                container.appendChild(div);
-            }
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('member-table-body');
-            tbody.innerHTML = '';
-            
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400">데이터가 없습니다.</td></tr>';
-                return;
-            }
-
-            data.forEach(m => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition-colors';
-                
-                const gradeCode = m.grade.charAt(0);
-                const gradeClass = ['A','B','C','D'].includes(gradeCode) ? `grade-${gradeCode}` : 'grade-D';
-                
-                tr.innerHTML = `
-                    <td class="px-6 py-4 font-bold text-slate-800">${m.name}</td>
-                    <td class="px-6 py-4 text-slate-600">${m.ageGroup}</td>
-                    <td class="px-6 py-4"><span class="grade-tag ${gradeClass}">${m.grade}</span></td>
-                    <td class="px-6 py-4 text-slate-600">${m.position || '-'}</td>
-                    <td class="px-6 py-4 text-slate-500 text-sm">${m.joinDate}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        document.getElementById('member-search').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = allMembers.filter(m => 
-                m.name.toLowerCase().includes(term) || 
-                m.position.toLowerCase().includes(term)
-            );
-            renderTable(filtered);
+      // 4. 운영진 추출 (직책 데이터)
+      const position = getVal(item, ['직책', 'Position', '구분']).trim();
+      if (position && position !== '-' && position !== '회원' && position !== '일반') {
+        managers.push({
+          name: getVal(item, ['이름', '성함', 'Name'], 0),
+          position: position
         });
+      }
+    });
 
-        window.onload = () => fetchData();
-    </script>
-</body>
-</html>
+    // 운영진 정렬 순서 적용
+    const sortedManagers = managers.sort((a, b) => {
+      const orderA = POSITION_ORDER[a.position] || 99;
+      const orderB = POSITION_ORDER[b.position] || 99;
+      return orderA - orderB;
+    });
+
+    return {
+      genderData: Object.entries(genderMap).map(([name, value]) => ({ 
+        name: `${name} (${value}명)`, 
+        pureName: name,
+        value 
+      })),
+      ageData: Object.entries(ageMap)
+        .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+        .map(([name, value]) => ({ name, label: `${name} (${value}명)`, value })),
+      rankData: Object.entries(rankMap)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([name, value]) => ({ name, label: `${name} (${value}명)`, value })),
+      managers: sortedManagers,
+      maleCount: genderMap['남'] || 0,
+      femaleCount: genderMap['여'] || 0
+    };
+  }, [data]);
+
+  const filteredMembers = useMemo(() => {
+    return data.filter(member => {
+      const name = getVal(member, ['이름', '성함', 'Name'], 0).toLowerCase();
+      const rank = getVal(member, ['급수', '부수', 'Level']).toLowerCase();
+      const pos = getVal(member, ['직책', 'Position']).toLowerCase();
+      const search = searchTerm.toLowerCase();
+      return name.includes(search) || rank.includes(search) || pos.includes(search);
+    });
+  }, [data, searchTerm]);
+
+  if (loading && !data.length) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 font-sans">
+        <RefreshCw className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+        <p className="text-slate-500 font-bold">참마음클럽 데이터를 동기화 중입니다...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans pb-10">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
+              <Users className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-black tracking-tight text-slate-800 leading-tight">참마음클럽 회원현황</h1>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                Dev: <span className="text-blue-600">참마음클럽 김병찬</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button onClick={fetchData} className="p-2 hover:bg-slate-100 rounded-full transition-all">
+              <RefreshCw className={`w-4 h-4 text-slate-400 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            <a href={`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}`} target="_blank" rel="noreferrer"
+               className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-sm">
+              <ExternalLink className="w-3.5 h-3.5" /> 시트 열기
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* 요약 현황 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard title="전체 회원" value={data.length} unit="명" color="blue" icon={<Users size={16} />} />
+          <StatCard title="운영진" value={stats?.managers.length} unit="명" color="indigo" icon={<ShieldCheck size={16} />} />
+          <StatCard title="남성 회원" value={stats?.maleCount} unit="명" color="blue" icon={<div className="w-1.5 h-1.5 rounded-full bg-blue-500" />} />
+          <StatCard title="여성 회원" value={stats?.femaleCount} unit="명" color="rose" icon={<div className="w-1.5 h-1.5 rounded-full bg-rose-500" />} />
+        </div>
+
+        {/* 차트 영역 (높이 조절) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+            <h3 className="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 w-full uppercase tracking-widest">
+              <Filter className="w-3.5 h-3.5" /> 성별 구성
+            </h3>
+            <div className="w-full h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={stats?.genderData} innerRadius={50} outerRadius={70} paddingAngle={8} dataKey="value">
+                    {stats?.genderData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.pureName === '남' ? '#3b82f6' : '#f43f5e'} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{borderRadius: '12px', fontSize: '11px'}} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontSize: '11px'}} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+            <h3 className="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest">
+              <Calendar className="w-3.5 h-3.5" /> 연령대별 현황 (C열 데이터)
+            </h3>
+            <div className="w-full h-[200px]">
+              {stats?.ageData && stats.ageData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats?.ageData} margin={{top: 20}}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                    <Tooltip cursor={{fill: '#f8fafc'}} />
+                    <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 0, 0]} barSize={35}>
+                      <LabelList dataKey="value" position="top" style={{fontSize: 10, fontWeight: 800, fill: '#6366f1'}} formatter={(val) => `${val}명`} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-300 text-xs font-medium">C열에 연령 데이터가 없습니다.</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 운영진 현황 (디자인 수정 - 중복 제거 및 컴팩트 레이아웃) */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-[10px] font-black text-slate-400 mb-6 flex items-center gap-2 uppercase tracking-widest">
+            <UserCheck className="w-4 h-4" /> 클럽 운영진 현황 ({stats?.managers.length}명)
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {stats?.managers.map((m, i) => (
+              <div key={i} className="flex flex-col items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-200 transition-all shadow-sm hover:shadow-md group">
+                <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mb-3 text-blue-600 font-black border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all text-[11px] leading-tight text-center px-1 shadow-inner">
+                  {m.position}
+                </div>
+                <p className="font-bold text-slate-800 text-sm">{m.name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 명단 테이블 (스크롤 최소화 - 컴팩트 레이아웃) */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+            <div className="flex items-center gap-2">
+              <h3 className="font-black text-slate-800 text-sm tracking-tight">전체 회원 명단</h3>
+              <span className="bg-white px-2 py-0.5 rounded-full text-[9px] font-black text-slate-400 border border-slate-200 shadow-sm">
+                {filteredMembers.length} ACTIVE
+              </span>
+            </div>
+            <div className="relative w-48 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
+              <input type="text" placeholder="이름, 급수 검색..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                     className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-100 transition-all shadow-sm" />
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-5 py-3">성함</th>
+                  <th className="px-5 py-3">성별</th>
+                  <th className="px-5 py-3 text-center">연령</th>
+                  <th className="px-5 py-3">급수</th>
+                  <th className="px-5 py-3">직책</th>
+                  <th className="px-5 py-3">비고</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredMembers.map((m, i) => (
+                  <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-5 py-2.5 font-bold text-slate-700 text-xs">{getVal(m, ['이름', '성함'], 0)}</td>
+                    <td className="px-5 py-2.5">
+                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                        getVal(m, ['성별'], 1) === '남' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
+                      }`}>
+                        {getVal(m, ['성별'], 1)}
+                      </span>
+                    </td>
+                    <td className="px-5 py-2.5 text-xs text-slate-500 text-center font-medium">{getVal(m, ['나이', '연령'], 2)}</td>
+                    <td className="px-5 py-2.5">
+                      <span className="bg-amber-50 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded-md border border-amber-100">
+                        {getVal(m, ['급수', '부수']) || '-'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-2.5">
+                      <span className="text-blue-600 font-bold text-[11px]">
+                        {getVal(m, ['직책']) === '-' ? '' : getVal(m, ['직책'])}
+                      </span>
+                    </td>
+                    <td className="px-5 py-2.5 text-[10px] text-slate-400 italic truncate max-w-[120px]">{getVal(m, ['비고'])}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+const StatCard = ({ title, value, unit, color, icon }) => {
+  const colorMap = {
+    blue: "text-blue-600 bg-blue-50",
+    indigo: "text-indigo-600 bg-indigo-50",
+    rose: "text-rose-600 bg-rose-50"
+  };
+  return (
+    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all">
+      <div className="flex justify-between items-start mb-2">
+        <div className={`p-1.5 rounded-xl ${colorMap[color] || colorMap.blue}`}>{icon}</div>
+        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{title}</p>
+      </div>
+      <div className="flex items-baseline gap-1">
+        <h4 className="text-xl font-black text-slate-800 tracking-tight">{value || 0}</h4>
+        <span className="text-[10px] font-bold text-slate-400">{unit}</span>
+      </div>
+    </div>
+  );
+};
+
+export default App;
