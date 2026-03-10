@@ -4,127 +4,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>참마음클럽 회원현황</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; letter-spacing: -0.025em; }
+        body { font-family: 'Pretendard', sans-serif; letter-spacing: -0.02em; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        canvas { max-width: 100% !important; }
-        .stat-card:hover { transform: translateY(-2px); }
+        canvas { max-width: 100% !important; height: 100% !important; }
+        .card-hover:hover { transform: translateY(-2px); transition: all 0.2s; }
     </style>
 </head>
-<body class="bg-[#f8fafc] text-[#1e293b] pb-10">
+<body class="bg-[#f1f5f9] text-[#1e293b] pb-10">
 
-    <!-- Header -->
+    <!-- Top Header -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center gap-4">
+        <div class="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-100">
-                    <i data-lucide="users" class="w-4 h-4 text-white"></i>
+                <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                    <i data-lucide="users" class="w-5 h-5 text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-base font-black tracking-tight text-slate-800 leading-none mb-1">참마음클럽 회원현황</h1>
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">
-                        Dev: <span class="text-blue-600 font-black">참마음클럽 김병찬</span>
-                    </p>
+                    <h1 class="text-base font-black text-slate-800 leading-tight">참마음클럽 회원현황</h1>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Dev: <span class="text-blue-600">김병찬</span></p>
                 </div>
             </div>
-
-            <div class="flex items-center gap-3">
-                <button id="refreshBtn" class="p-2 hover:bg-slate-100 rounded-full transition-all group">
-                    <i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-500"></i>
+            <div class="flex items-center gap-2">
+                <button id="refreshBtn" class="p-2 hover:bg-slate-100 rounded-full transition-colors group">
+                    <i data-lucide="refresh-cw" id="refreshIcon" class="w-4 h-4 text-slate-400 group-hover:text-blue-500"></i>
                 </button>
-                <a id="sheetLink" target="_blank" rel="noreferrer"
-                   class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-sm active:scale-95">
-                    <i data-lucide="external-link" class="w-3 h-3"></i> 시트 열기
+                <a id="sheetLink" target="_blank" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> 시트
                 </a>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-5 space-y-5">
-        <!-- Summary Stats Grid -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="statsGrid">
-            <!-- Stats Cards will be injected here -->
+    <main class="max-w-7xl mx-auto px-4 py-4 space-y-4">
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="statsContainer">
+            <!-- Stats JS Injected -->
         </div>
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 w-full uppercase tracking-widest border-b border-slate-50 pb-2">
-                    <i data-lucide="filter" class="w-3 h-3"></i> 성별 구성
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <!-- Gender Chart -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 card-hover">
+                <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-2">
+                    <i data-lucide="pie-chart" class="w-3 h-3 text-blue-500"></i> 성별 구성
                 </h3>
-                <div class="w-full h-[180px] relative">
+                <div class="h-[180px] w-full relative">
                     <canvas id="genderChart"></canvas>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+            <!-- Age Chart (C열 데이터) -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2 card-hover">
                 <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-2">
-                    <i data-lucide="calendar" class="w-3 h-3"></i> 연령대별 현황 (C열 데이터)
+                    <i data-lucide="bar-chart-3" class="w-3 h-3 text-indigo-500"></i> 연령대별 현황 (C열 기준)
                 </h3>
-                <div class="w-full h-[180px]">
+                <div class="h-[180px] w-full">
                     <canvas id="ageChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Rank & Managers Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+        <!-- Rank & Management -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Rank Chart -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 card-hover">
                 <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-2">
-                    <i data-lucide="award" class="w-3 h-3"></i> 급수별 인원현황
+                    <i data-lucide="award" class="w-3 h-3 text-amber-500"></i> 급수별 현황
                 </h3>
-                <div class="w-full h-[250px]">
+                <div class="h-[250px] w-full">
                     <canvas id="rankChart"></canvas>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="text-[10px] font-black text-slate-400 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-2">
-                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-500"></i> 클럽 운영진 현황 <span id="managerCount" class="text-blue-600 font-black"></span>
+            <!-- Managers Grid -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 card-hover">
+                <h3 class="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-2">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-600"></i> 클럽 운영진 현황 <span id="mgrCountText" class="text-blue-600 font-black"></span>
                 </h3>
-                <div id="managerGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto max-h-[250px] pr-1 custom-scrollbar">
-                    <!-- Managers cards will be injected here -->
+                <div id="managerList" class="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto max-h-[250px] pr-1 custom-scrollbar">
+                    <!-- Managers JS Injected -->
                 </div>
             </div>
         </div>
 
-        <!-- Detailed List Table -->
+        <!-- Table Section -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/30">
-                <div class="flex items-center gap-2">
-                    <h3 class="font-black text-slate-800 text-sm tracking-tight">전체 회원 명단</h3>
-                    <span id="activeCount" class="bg-white px-2 py-0.5 rounded-full text-[9px] font-black text-blue-600 border border-blue-100 shadow-sm">
-                    </span>
-                </div>
-                <div class="relative w-full sm:w-64">
+            <div class="px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="font-black text-slate-800 text-sm">전체 회원 명단 <span id="memberTotalText" class="ml-1 text-blue-600 text-xs font-bold"></span></h3>
+                <div class="relative w-40 sm:w-60">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300"></i>
-                    <input type="text" id="searchInput" placeholder="이름, 급수, 직책 검색..."
-                           class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-100 transition-all shadow-sm" />
+                    <input type="text" id="tableSearch" placeholder="이름/급수 검색" class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-100 shadow-sm" />
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left text-xs">
                     <thead>
-                        <tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100 bg-slate-50/50">
-                            <th class="px-5 py-2.5">성함</th>
-                            <th class="px-4 py-2.5">성별</th>
-                            <th class="px-4 py-2.5 text-center">연령</th>
-                            <th class="px-4 py-2.5">급수</th>
-                            <th class="px-4 py-2.5">직책</th>
-                            <th class="px-5 py-2.5">비고</th>
+                        <tr class="bg-slate-50 text-slate-400 font-black uppercase tracking-tighter border-b border-slate-100">
+                            <th class="px-5 py-3">성함</th>
+                            <th class="px-3 py-3">성별</th>
+                            <th class="px-3 py-3 text-center">연령(C열)</th>
+                            <th class="px-3 py-3">급수</th>
+                            <th class="px-3 py-3">직책</th>
+                            <th class="px-5 py-3">비고</th>
                         </tr>
                     </thead>
-                    <tbody id="memberTableBody" class="divide-y divide-slate-50">
-                        <!-- Table rows will be injected here -->
+                    <tbody id="tableBody" class="divide-y divide-slate-50">
+                        <!-- Table Rows JS Injected -->
                     </tbody>
                 </table>
             </div>
@@ -134,272 +126,203 @@
     <script>
         const SPREADSHEET_ID = '1b1uUos7N3BfuWgHmnyv88FikfZ3g-3sKLkdeJTCrdoQ';
         const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv`;
-        
-        // 정렬 순서 정의
-        const POSITION_ORDER = { '회장': 1, '부회장': 2, '총무': 3, '재무': 4, '경기이사': 5, '청년부장': 6, '자문위원': 7 };
-        
-        // 헤더 매핑 (다양한 이름 대응)
-        const HEADER_MAP = {
-            name: ['이름', '성함', 'Name'],
-            gender: ['성별', '성', 'Gender'],
-            age: ['나이', '연령', 'Age', '연세'],
-            rank: ['급수', '부수', 'Level'],
-            position: ['직책', 'Position', '구분'],
-            note: ['비고', 'Note']
+        const MGR_ORDER = { '회장': 1, '부회장': 2, '총무': 3, '재무': 4, '경기이사': 5, '청년부장': 6, '자문위원': 7 };
+
+        let rawMembers = [];
+        let activeCharts = {};
+
+        // 초기화
+        const init = () => {
+            lucide.createIcons();
+            fetchData();
         };
 
-        let rawData = [];
-        let charts = {};
+        const fetchData = async () => {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('animate-spin');
+            try {
+                const res = await fetch(`${CSV_URL}&t=${Date.now()}`);
+                const csv = await res.text();
+                processData(csv);
+            } catch (err) {
+                console.error(err);
+                alert("데이터 로드 오류가 발생했습니다.");
+            } finally {
+                icon.classList.remove('animate-spin');
+            }
+        };
 
-        // Lucide 아이콘 초기화 함수
-        const initIcons = () => lucide.createIcons();
+        const processData = (csv) => {
+            const lines = csv.replace(/^\uFEFF/, '').split(/\r?\n/);
+            if (lines.length < 2) return;
 
-        // CSV 데이터 파싱
-        const parseCSV = (text) => {
-            const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
-            if (lines.length === 0) return [];
-            const headers = splitCSVLine(lines[0]).map(h => h.trim());
-            const result = [];
+            const headers = splitCSV(lines[0]);
+            rawMembers = [];
+
             for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                const values = splitCSVLine(lines[i]);
-                const obj = { _raw: values.map(v => v.trim()) };
-                headers.forEach((header, index) => {
-                    obj[header] = values[index]?.trim() || '';
-                });
-                result.push(obj);
+                const values = splitCSV(lines[i]);
+                if (values.length < 2) continue;
+                
+                const member = { _raw: values };
+                headers.forEach((h, idx) => { member[h.trim()] = values[idx]?.trim() || ''; });
+                rawMembers.push(member);
             }
-            return result;
+            renderAll();
         };
 
-        const splitCSVLine = (line) => {
-            const result = [];
-            let cur = '';
-            let inQuotes = false;
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                if (char === '"') inQuotes = !inQuotes;
-                else if (char === ',' && !inQuotes) { result.push(cur); cur = ''; }
-                else cur += char;
+        const splitCSV = (str) => {
+            const res = [];
+            let cur = '', q = false;
+            for (let c of str) {
+                if (c === '"') q = !q;
+                else if (c === ',' && !q) { res.push(cur); cur = ''; }
+                else cur += c;
             }
-            result.push(cur);
-            return result;
+            res.push(cur);
+            return res;
         };
 
-        // 데이터 추출 헬퍼
-        const getVal = (item, type, index = -1) => {
-            const keys = HEADER_MAP[type] || [];
-            for (let key of keys) {
-                if (item[key] !== undefined && item[key] !== '') return item[key];
-            }
-            // 헤더 매칭 실패 시 지정된 인덱스 활용 (연령은 C열=2)
-            if (index !== -1 && item._raw && item._raw[index]) return item._raw[index];
+        // 데이터 찾기 (C열은 인덱스 2)
+        const getField = (m, keys, colIdx = -1) => {
+            for (let k of keys) { if (m[k]) return m[k]; }
+            if (colIdx !== -1 && m._raw[colIdx]) return m._raw[colIdx];
             return '';
         };
 
-        // 통계 요약 카드 렌더링
-        const renderStatCard = (title, value, unit, colorClass, iconHtml) => {
-            const colorStyles = {
-                blue: 'bg-blue-50 text-blue-600',
-                indigo: 'bg-indigo-50 text-indigo-600',
-                rose: 'bg-rose-50 text-rose-600'
-            }[colorClass] || 'bg-slate-50';
-            
-            return `
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 transition-all stat-card">
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="p-1.5 rounded-xl ${colorStyles}">${iconHtml}</div>
-                        <p class="text-[9px] font-black text-slate-300 uppercase tracking-widest">${title}</p>
-                    </div>
-                    <div class="flex items-baseline gap-1">
-                        <h4 class="text-xl font-black text-slate-800 tracking-tight">${value || 0}</h4>
-                        <span class="text-[10px] font-bold text-slate-400">${unit}</span>
-                    </div>
-                </div>
-            `;
-        };
+        const renderAll = () => {
+            const stats = { 남: 0, 여: 0, ageMap: {}, rankMap: {}, managers: [] };
 
-        // 화면 UI 업데이트 및 데이터 가공
-        const updateUI = () => {
-            const genderMap = {};
-            const ageMap = {};
-            const rankMap = {};
-            const managers = [];
+            rawMembers.forEach(m => {
+                // 성별 (B열=1)
+                const g = getField(m, ['성별', '성'], 1);
+                if (g.includes('남')) stats.남++; else if (g.includes('여')) stats.여++;
 
-            rawData.forEach(item => {
-                // 성별
-                const gender = getVal(item, 'gender', 1).trim();
-                if (gender) genderMap[gender] = (genderMap[gender] || 0) + 1;
-
-                // 연령 (C열 데이터 우선)
-                const ageRaw = getVal(item, 'age', 2);
-                const ageMatch = ageRaw.toString().match(/\d+/);
-                if (ageMatch) {
-                    const group = Math.floor(parseInt(ageMatch[0]) / 10) * 10 + '대';
-                    ageMap[group] = (ageMap[group] || 0) + 1;
+                // 연령 (C열=2) - 핵심 수정 사항
+                const aRaw = getField(m, ['나이', '연령', 'Age'], 2);
+                const aNum = aRaw.match(/\d+/);
+                if (aNum) {
+                    const group = Math.floor(parseInt(aNum[0]) / 10) * 10 + '대';
+                    stats.ageMap[group] = (stats.ageMap[group] || 0) + 1;
                 }
 
                 // 급수
-                const rank = getVal(item, 'rank').trim();
-                if (rank && rank !== '-') rankMap[rank] = (rankMap[rank] || 0) + 1;
+                const r = getField(m, ['급수', '부수']);
+                if (r && r !== '-') stats.rankMap[r] = (stats.rankMap[r] || 0) + 1;
 
-                // 운영진
-                const position = getVal(item, 'position').trim();
-                if (position && position !== '-' && position !== '회원' && position !== '일반') {
-                    managers.push({ name: getVal(item, 'name', 0), position });
+                // 직책
+                const p = getField(m, ['직책', '구분']);
+                if (p && p !== '-' && p !== '회원' && p !== '일반') {
+                    stats.managers.push({ name: getField(m, ['이름', '성함'], 0), pos: p });
                 }
             });
 
-            // 운영진 정렬
-            managers.sort((a, b) => (POSITION_ORDER[a.position] || 99) - (POSITION_ORDER[b.position] || 99));
+            // 1. 요약 카드
+            document.getElementById('statsContainer').innerHTML = `
+                ${statCard('전체 회원', rawMembers.length, '명', 'blue', 'users')}
+                ${statCard('클럽 운영진', stats.managers.length, '명', 'indigo', 'shield-check')}
+                ${statCard('남성 회원', stats.남, '명', 'blue', 'circle-user')}
+                ${statCard('여성 회원', stats.여, '명', 'rose', 'circle-user')}
+            `;
 
-            // 상단 요약 카드 주입
-            document.getElementById('statsGrid').innerHTML = 
-                renderStatCard('전체 회원', rawData.length, '명', 'blue', '<i data-lucide="users" style="width:16px; height:16px;"></i>') +
-                renderStatCard('운영진', managers.length, '명', 'indigo', '<i data-lucide="shield-check" style="width:16px; height:16px;"></i>') +
-                renderStatCard('남성 회원', genderMap['남'] || 0, '명', 'blue', '<div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>') +
-                renderStatCard('여성 회원', genderMap['여'] || 0, '명', 'rose', '<div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>');
-
-            // 운영진 명단 주입
-            document.getElementById('managerCount').innerText = `(${managers.length}명)`;
-            document.getElementById('managerGrid').innerHTML = managers.map(m => `
-                <div class="flex flex-col items-center p-3.5 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-200 transition-all shadow-sm group">
-                    <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center mb-2.5 text-blue-600 font-black border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all text-[10px] leading-tight text-center px-1 shadow-inner">
-                        ${m.position}
+            // 2. 운영진 (정렬 및 중복 제거)
+            stats.managers.sort((a, b) => (MGR_ORDER[a.pos] || 99) - (MGR_ORDER[b.pos] || 99));
+            document.getElementById('mgrCountText').innerText = `(${stats.managers.length}명)`;
+            document.getElementById('managerList').innerHTML = stats.managers.map(m => `
+                <div class="flex flex-col items-center p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-200 transition-all shadow-sm group">
+                    <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center mb-2 text-blue-600 font-black border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all text-[10px] shadow-inner px-1 text-center leading-tight">
+                        ${m.pos}
                     </div>
-                    <p class="font-bold text-slate-800 text-xs">${m.name}</p>
+                    <p class="font-bold text-slate-800 text-[13px]">${m.name}</p>
                 </div>
             `).join('');
 
-            // 차트 및 테이블 업데이트
-            updateCharts(genderMap, ageMap, rankMap);
+            // 3. 차트
+            renderCharts(stats);
             renderTable();
-            initIcons();
+            lucide.createIcons();
         };
 
-        const updateCharts = (genderMap, ageMap, rankMap) => {
-            // Chart.js 옵션 공통 설정
-            const chartOptions = { responsive: true, maintainAspectRatio: false };
+        const statCard = (t, v, u, c, icon) => `
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm card-hover">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="p-1.5 rounded-lg bg-${c}-50 text-${c}-600"><i data-lucide="${icon}" class="w-4 h-4"></i></div>
+                    <span class="text-[9px] font-black text-slate-300 uppercase tracking-widest">${t}</span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-black text-slate-800">${v}</span><span class="text-[10px] font-bold text-slate-400">${u}</span>
+                </div>
+            </div>
+        `;
 
-            // 1. 성별 차트
-            if (charts.gender) charts.gender.destroy();
-            charts.gender = new Chart(document.getElementById('genderChart'), {
+        const renderCharts = (s) => {
+            const ctxG = document.getElementById('genderChart').getContext('2d');
+            if (activeCharts.g) activeCharts.g.destroy();
+            activeCharts.g = new Chart(ctxG, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(genderMap).map(k => `${k} (${genderMap[k]}명)`),
-                    datasets: [{
-                        data: Object.values(genderMap),
-                        backgroundColor: ['#3b82f6', '#f43f5e', '#10b981'],
-                        borderWidth: 4, borderColor: '#fff'
-                    }]
+                    labels: [`남 (${s.남}명)`, `여 (${s.여}명)`],
+                    datasets: [{ data: [s.남, s.여], backgroundColor: ['#3b82f6', '#f43f5e'], borderWidth: 0 }]
                 },
-                options: { 
-                    ...chartOptions,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10, weight: 'bold' } } } }
-                }
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: 'bold' } } } } }
             });
 
-            // 2. 연령 차트
-            const ageSortedKeys = Object.keys(ageMap).sort((a,b) => parseInt(a) - parseInt(b));
-            if (charts.age) charts.age.destroy();
-            charts.age = new Chart(document.getElementById('ageChart'), {
+            const ageKeys = Object.keys(s.ageMap).sort();
+            const ctxA = document.getElementById('ageChart').getContext('2d');
+            if (activeCharts.a) activeCharts.a.destroy();
+            activeCharts.a = new Chart(ctxA, {
                 type: 'bar',
                 data: {
-                    labels: ageSortedKeys.map(k => `${k} (${ageMap[k]}명)`),
-                    datasets: [{
-                        label: '인원수(명)',
-                        data: ageSortedKeys.map(k => ageMap[k]),
-                        backgroundColor: '#6366f1', borderRadius: 4
-                    }]
+                    labels: ageKeys.map(k => `${k} (${s.ageMap[k]}명)`),
+                    datasets: [{ label: '명', data: ageKeys.map(k => s.ageMap[k]), backgroundColor: '#6366f1', borderRadius: 4 }]
                 },
-                options: {
-                    ...chartOptions,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 9 } } },
-                        x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }
-                    }
-                }
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } } } }
             });
 
-            // 3. 급수 차트
-            const rankSortedKeys = Object.keys(rankMap).sort();
-            if (charts.rank) charts.rank.destroy();
-            charts.rank = new Chart(document.getElementById('rankChart'), {
+            const rankKeys = Object.keys(s.rankMap).sort();
+            const ctxR = document.getElementById('rankChart').getContext('2d');
+            if (activeCharts.r) activeCharts.r.destroy();
+            activeCharts.r = new Chart(ctxR, {
                 type: 'bar',
                 data: {
-                    labels: rankSortedKeys,
-                    datasets: [{
-                        label: '인원수(명)',
-                        data: rankSortedKeys.map(k => rankMap[k]),
-                        backgroundColor: '#f59e0b', borderRadius: 4
-                    }]
+                    labels: rankKeys,
+                    datasets: [{ label: '명', data: rankKeys.map(k => s.rankMap[k]), backgroundColor: '#f59e0b', borderRadius: 4 }]
                 },
-                options: {
-                    ...chartOptions,
-                    indexAxis: 'y',
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 9 } } },
-                        y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }
-                    }
-                }
+                options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: false }, ticks: { font: { weight: 'bold' } } } } }
             });
         };
 
         const renderTable = () => {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = rawData.filter(m => {
-                const name = getVal(m, 'name', 0).toLowerCase();
-                const rank = getVal(m, 'rank').toLowerCase();
-                const pos = getVal(m, 'position').toLowerCase();
-                return name.includes(searchTerm) || rank.includes(searchTerm) || pos.includes(searchTerm);
+            const q = document.getElementById('tableSearch').value.toLowerCase();
+            const filtered = rawMembers.filter(m => {
+                const name = getField(m, ['이름', '성함'], 0).toLowerCase();
+                const rank = getField(m, ['급수']).toLowerCase();
+                return name.includes(q) || rank.includes(q);
             });
 
-            document.getElementById('activeCount').innerText = `${filtered.length} 명`;
-            document.getElementById('memberTableBody').innerHTML = filtered.map(m => `
+            document.getElementById('memberTotalText').innerText = `${filtered.length}명`;
+            document.getElementById('tableBody').innerHTML = filtered.map(m => `
                 <tr class="hover:bg-slate-50/50 transition-colors">
-                    <td class="px-5 py-2 font-bold text-slate-700 text-[11px]">${getVal(m, 'name', 0)}</td>
-                    <td class="px-4 py-2">
-                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md ${getVal(m, 'gender', 1) === '남' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}">
-                            ${getVal(m, 'gender', 1)}
+                    <td class="px-5 py-2.5 font-bold text-slate-700">${getField(m, ['이름', '성함'], 0)}</td>
+                    <td class="px-3 py-2.5">
+                        <span class="text-[10px] font-black px-1.5 py-0.5 rounded-md ${getField(m, ['성별'], 1).includes('남') ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}">
+                            ${getField(m, ['성별'], 1)}
                         </span>
                     </td>
-                    <td class="px-4 py-2 text-[11px] text-slate-500 text-center font-medium">${getVal(m, 'age', 2)}</td>
-                    <td class="px-4 py-2">
-                        <span class="bg-amber-50 text-amber-700 text-[9px] font-black px-1.5 py-0.5 rounded-md border border-amber-100">
-                            ${getVal(m, 'rank') || '-'}
-                        </span>
+                    <td class="px-3 py-2.5 text-center text-slate-500 font-medium">${getField(m, ['나이', '연령'], 2)}</td>
+                    <td class="px-3 py-2.5">
+                        <span class="bg-amber-50 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded border border-amber-100">${getField(m, ['급수']) || '-'}</span>
                     </td>
-                    <td class="px-4 py-2 text-blue-600 font-bold text-[10px]">${getVal(m, 'position') === '-' ? '' : getVal(m, 'position')}</td>
-                    <td class="px-5 py-2 text-[10px] text-slate-400 italic truncate max-w-[120px]">${getVal(m, 'note')}</td>
+                    <td class="px-3 py-2.5 text-blue-600 font-bold text-[11px]">${getField(m, ['직책']) === '-' ? '' : getField(m, ['직책'])}</td>
+                    <td class="px-5 py-2.5 text-[10px] text-slate-400 italic truncate max-w-[120px]">${getField(m, ['비고'])}</td>
                 </tr>
             `).join('');
         };
 
-        const fetchData = async () => {
-            const refreshIcon = document.getElementById('refreshIcon');
-            refreshIcon.classList.add('animate-spin');
-            try {
-                const response = await fetch(`${CSV_URL}&t=${Date.now()}`);
-                const text = await response.text();
-                rawData = parseCSV(text);
-                updateUI();
-            } catch (err) {
-                console.error(err);
-                alert('데이터 동기화 중 오류가 발생했습니다.');
-            } finally {
-                refreshIcon.classList.remove('animate-spin');
-            }
-        };
-
-        // Event Listeners
-        document.getElementById('refreshBtn').addEventListener('click', fetchData);
-        document.getElementById('searchInput').addEventListener('input', renderTable);
+        document.getElementById('refreshBtn').onclick = fetchData;
+        document.getElementById('tableSearch').oninput = renderTable;
         document.getElementById('sheetLink').href = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}`;
 
-        // Initial Load
-        window.onload = fetchData;
+        window.onload = init;
     </script>
 </body>
 </html>
