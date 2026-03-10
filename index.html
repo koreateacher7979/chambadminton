@@ -57,10 +57,10 @@
                 </div>
             </div>
 
-            <!-- Age Chart -->
+            <!-- Age Chart (5세 단위 업데이트) -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2 card-hover">
                 <h3 class="text-[11px] font-black text-slate-400 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-slate-50 pb-3">
-                    <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-500"></i> 연령대별 현황
+                    <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-500"></i> 연령대별 현황 (45대, 55대 포함)
                 </h3>
                 <div class="h-[200px] w-full">
                     <canvas id="ageChart"></canvas>
@@ -223,7 +223,9 @@
                 const aRaw = getField(m, ['나이', '연령', 'Age'], 2);
                 const aNum = aRaw.toString().match(/\d+/);
                 if (aNum) {
-                    const group = Math.floor(parseInt(aNum[0]) / 10) * 10 + '대';
+                    const age = parseInt(aNum[0]);
+                    // 5세 단위 그룹핑 (45대, 55대 포함을 위함)
+                    const group = Math.floor(age / 5) * 5 + '대';
                     stats.ageMap[group] = (stats.ageMap[group] || 0) + 1;
                 }
 
@@ -287,7 +289,8 @@
                 }
             });
 
-            const ageKeys = Object.keys(s.ageMap).sort();
+            // 연령대 정렬 (숫자순)
+            const ageKeys = Object.keys(s.ageMap).sort((a, b) => parseInt(a) - parseInt(b));
             const ctxA = document.getElementById('ageChart').getContext('2d');
             if (activeCharts.a) activeCharts.a.destroy();
             activeCharts.a = new Chart(ctxA, {
