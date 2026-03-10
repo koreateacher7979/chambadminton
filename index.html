@@ -148,7 +148,8 @@
         lucide.createIcons();
 
         const SPREADSHEET_ID = '1b1uUos7N3BfuWgHmnyv88FikfZ3g-3sKLkdeJTCrdoQ';
-        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv`;
+        // 더 안정적인 Google Visualization API 엔드포인트 사용
+        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv`;
         const CACHE_KEY = 'cham_maum_cache';
 
         let gradeChartInstance = null;
@@ -164,57 +165,78 @@
 
             if (isLoading) {
                 btn.disabled = true;
-                icon.classList.add('spin');
-                text.innerText = '동기화 중...';
-                stats.classList.add('loading-pulse');
+                if(icon) icon.classList.add('spin');
+                if(text) text.innerText = '동기화 중...';
+                if(stats) stats.classList.add('loading-pulse');
             } else {
                 btn.disabled = false;
-                icon.classList.remove('spin');
-                text.innerText = '새로고침';
-                stats.classList.remove('loading-pulse');
+                if(icon) icon.classList.remove('spin');
+                if(text) text.innerText = '새로고침';
+                if(stats) stats.classList.remove('loading-pulse');
             }
         }
 
+        // CSV parsing that handles quotes and commas correctly
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/);
+            return lines.map(line => {
+                const result = [];
+                let cur = '', inQuote = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') inQuote = !inQuote;
+                    else if (char === ',' && !inQuote) {
+                        result.push(cur);
+                        cur = '';
+                    } else cur += char;
+                }
+                result.push(cur);
+                // Remove surrounding quotes and trim
+                return result.map(v => v.replace(/^"|"$/g, '').trim());
+            });
+        }
+
         async function fetchData(isManual = false) {
-            // 1. Try to load from Cache first for instant speed
+            // 1. Try to load from Cache first
             const cachedData = localStorage.getItem(CACHE_KEY);
             if (cachedData && !isManual) {
                 try {
                     const parsedCache = JSON.parse(cachedData);
                     allMembers = parsedCache.data;
                     updateDashboard();
-                    document.getElementById('last-updated').innerText = `캐시된 데이터 (마지막 확인: ${parsedCache.time})`;
+                    document.getElementById('last-updated').innerText = `최근 데이터 (확인: ${parsedCache.time})`;
                 } catch (e) { console.error("Cache parse error", e); }
             }
 
             toggleLoading(true);
 
             try {
-                // 2. Fetch fresh data from network
+                // 2. Fetch fresh data
                 const response = await fetch(CSV_URL + '&cache_bust=' + Date.now());
-                const csvText = await response.text();
-                const rows = csvText.split('\n').map(row => row.split(','));
+                if (!response.ok) throw new Error('Network response was not ok');
                 
-                const data = rows.slice(1).filter(row => row[0] && row[0].trim() !== "");
+                const csvText = await response.text();
+                const rows = parseCSV(csvText);
+                
+                // Header: [이름, 소개, 직책, 가입일]
+                const data = rows.slice(1).filter(row => row[0] && row[0] !== "");
                 
                 const newMembers = data.map(row => {
-                    const info = row[1] ? row[1].trim() : "";
-                    const age = info.replace(/[A-Z]/g, '');
-                    const grade = info.slice(-1);
+                    const info = row[1] ? row[1] : "";
+                    const age = info.replace(/[A-Z]/gi, '');
+                    const grade = info.slice(-1).toUpperCase();
                     return {
-                        name: row[0].trim(),
+                        name: row[0],
                         code: info,
                         ageGroup: age ? Math.floor(parseInt(age) / 10) * 10 + '대' : '미상',
-                        grade: (grade ? grade : 'D') + '급',
-                        position: row[2] ? row[2].trim() : '',
-                        joinDate: row[3] ? row[3].trim() : ''
+                        grade: (['A','B','C','D'].includes(grade) ? grade : 'D') + '급',
+                        position: row[2] || '',
+                        joinDate: row[3] || ''
                     };
                 });
 
-                // Update only if data exists
                 if (newMembers.length > 0) {
                     allMembers = newMembers;
-                    // Save to Cache
                     const timestamp = new Date().toLocaleString();
                     localStorage.setItem(CACHE_KEY, JSON.stringify({
                         data: allMembers,
@@ -227,11 +249,18 @@
 
             } catch (error) {
                 console.error('Error fetching data:', error);
+                document.getElementById('last-updated').innerText = "데이터 로딩 실패 (공개 설정을 확인하세요)";
+                // 만약 에러가 나면 사용자에게 가이드를 줌
                 if (!allMembers.length) {
-                    document.getElementById('last-updated').innerText = "데이터 로딩 실패 (네트워크 확인 필요)";
+                    const tbody = document.getElementById('member-table-body');
+                    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400 font-medium">
+                        데이터를 불러올 수 없습니다.<br>
+                        스프레드시트에서 [파일] -> [공유] -> [웹에 게시]를 눌렀는지 확인해주세요.
+                    </td></tr>`;
                 }
             } finally {
                 toggleLoading(false);
+                lucide.createIcons();
             }
         }
 
@@ -252,7 +281,7 @@
             updateAgeChart(ageGroups, ageCounts);
 
             const maxAgeIdx = ageCounts.indexOf(Math.max(...ageCounts));
-            document.getElementById('top-age-group').innerText = ageGroups[maxAgeIdx] !== '0대' ? ageGroups[maxAgeIdx] : '-';
+            document.getElementById('top-age-group').innerText = ageCounts[maxAgeIdx] > 0 ? ageGroups[maxAgeIdx] : '-';
 
             // Position List
             updatePositionList();
@@ -312,7 +341,7 @@
             
             const positions = {};
             allMembers.forEach(m => {
-                if (m.position && m.position !== '-') {
+                if (m.position && m.position !== '-' && m.position !== '회원') {
                     if (!positions[m.position]) positions[m.position] = [];
                     positions[m.position].push(m.name);
                 }
@@ -338,6 +367,11 @@
             const tbody = document.getElementById('member-table-body');
             tbody.innerHTML = '';
             
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400">데이터가 없습니다.</td></tr>';
+                return;
+            }
+
             data.forEach(m => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition-colors';
